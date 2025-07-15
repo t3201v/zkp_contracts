@@ -50,6 +50,11 @@ const config: HardhatUserConfig = {
     //   url: `${process.env.LINEA_RPC_URL}`,
     //   accounts: [`0x${process.env.LINEA_PRIVATE_KEY}`]
     // },
+    'u2u-testnet': {
+      chainId: 2484,
+      url: `${process.env.U2U_TESTNET_RPC_URL}`,
+      accounts: [`0x${process.env.U2U_TESTNET_PRIVATE_KEY}`]
+    },
     localhost: {
       url: 'http://127.0.0.1:8545',
       accounts: {
@@ -64,7 +69,8 @@ const config: HardhatUserConfig = {
     apiKey: {
       linea: process.env.LINEA_API_KEY,
       'linea-sepolia': process.env.LINEA_API_KEY,
-      amoy: process.env.AMOY_API_KEY
+      amoy: process.env.AMOY_API_KEY,
+      'u2u-testnet': process.env.U2U_TESTNET_API_KEY
     },
     customChains: [
       {
@@ -90,6 +96,14 @@ const config: HardhatUserConfig = {
         urls: {
           apiURL: 'https://api.lineascan.build/api',
           browserURL: 'https://lineascan.build'
+        }
+      },
+        {
+        network: 'u2u-testnet',
+        chainId: 2484,
+        urls: {
+          apiURL: 'https://testnet.u2uscan.xyz/api',
+          browserURL: 'https://testnet.u2uscan.xyz'
         }
       }
     ]

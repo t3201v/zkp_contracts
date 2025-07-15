@@ -73,6 +73,10 @@
     "upgrade:amoy:v3": "npx hardhat run scripts/upgradeV3Validator.ts --network amoy",
     "deploy:vc-payment": "npx hardhat run scripts/deployVCPayment.ts --network linea",
     "payment:set-payment-value": "npx hardhat run scripts/setPaymentValue.ts --network linea",
+    "deploy:u2u-testnet:loyalty": "npx hardhat run scripts/deployLoyalty.ts --network u2u-testnet",
+    "loyalty:set-request": "npx hardhat run scripts/setLoyaltyZKPRequest.ts --network u2u-testnet",
+    "deploy:u2u-testnet:erc20linkeduniversalverifier": "npx hardhat run scripts/deployERC20LinkedUniversalVerifier.ts --network u2u-testnet",
+    "deploy:u2u-testnet:erc20SelectiveDisclosure": "npx hardhat run scripts/deployERC20SelectiveDisclosure.ts --network u2u-testnet",
     "format": "prettier --write scripts/*.ts test/**/*.ts",
     "lint:contracts": "npx solhint contracts/**/*.sol",
     "prettier:contracts": "prettier --write --plugin=prettier-plugin-solidity 'contracts/**/*.sol'"
