@@ -14,8 +14,10 @@ const chainId = chainIdMapping[process.env.HARDHAT_NETWORK || ''];
 const pathOutputJson = path.join(__dirname, `./deployments_output/deploy_output_${chainId}_loyalty.json`);
 
 async function main() {
-  const stateAddress = '0x6f75ED7F8432ffcdb88776D804F73Af49DF5Cde7'; // u2u testnet
-  const verifierLibAddress = '0x7Da96F77Fc4Ce9B6EAfC07954fCd0aC04B7BEF4a'; // u2u testnet (universal verifier)
+  // const stateAddress = '0x6f75ED7F8432ffcdb88776D804F73Af49DF5Cde7'; // u2u testnet
+  const stateAddress = '0x1a4cC30f2aA0377b0c3bc9848766D90cb4404124'; // amoy
+  // const verifierLibAddress = '0x7Da96F77Fc4Ce9B6EAfC07954fCd0aC04B7BEF4a'; // u2u testnet (universal verifier)
+  const verifierLibAddress = '0xfcc86A79fCb057A8e55C6B853dff9479C3cf607c'; // amoy
 
   const [owner] = await ethers.getSigners();
 

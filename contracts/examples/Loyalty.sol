@@ -15,8 +15,8 @@ import {PrimitiveTypeUtils} from "@iden3/contracts/lib/PrimitiveTypeUtils.sol";
  * claim tokens based on points awarded to them by the owner.
  */
 contract Loyalty is Ownable2StepUpgradeable, EmbeddedZKPVerifier {
-    // Placeholder Request ID for the identity-only proof
-    uint64 public constant IDENTITY_VERIFICATION_REQUEST_ID = 1;
+    uint64 public constant SUBMIT_REQUEST_ID_SIG_VALIDATOR = 1;
+    uint64 public constant SUBMIT_REQUEST_ID_MTP_VALIDATOR = 2;
 
     // Mapping from user's identity ID (from ZKP) to their wallet address
     mapping(uint256 => address) public idToAddress;
@@ -39,6 +39,18 @@ contract Loyalty is Ownable2StepUpgradeable, EmbeddedZKPVerifier {
         __Ownable_init(_initialOwner);
         __EmbeddedZKPVerifier_init(_initialOwner, IState(_stateContractAddr));
         pointsToTokenRate = rate;
+    }
+
+    /**
+     * @dev Check if user submitted proof on-chain
+     */
+    modifier beforeClaim(address to) {
+        require(
+            isProofVerified(to, SUBMIT_REQUEST_ID_SIG_VALIDATOR) ||
+            isProofVerified(to, SUBMIT_REQUEST_ID_MTP_VALIDATOR),
+            'only identities who provided sig or mtp proof on-chain are allowed to receive loyalty points'
+        );
+        _;
     }
 
     // --- ZKP Hooks & Verification Logic ---
@@ -67,7 +79,7 @@ contract Loyalty is Ownable2StepUpgradeable, EmbeddedZKPVerifier {
         uint256[] memory inputs,
         ICircuitValidator /* validator */
     ) internal override {
-        if (requestId == IDENTITY_VERIFICATION_REQUEST_ID) {
+        if (requestId == SUBMIT_REQUEST_ID_SIG_VALIDATOR || requestId == SUBMIT_REQUEST_ID_MTP_VALIDATOR) {
             uint256 userId = inputs[1]; // As per standard Polygon ID circuit outputs
             address sender = _msgSender();
 
@@ -84,7 +96,7 @@ contract Loyalty is Ownable2StepUpgradeable, EmbeddedZKPVerifier {
     /**
      * @dev Allows a user who has proven their identity to claim tokens for their points.
      */
-    function claimTokens() public {
+    function claimTokens() public beforeClaim(msg.sender) {
         address user = _msgSender();
         uint256 pointsToClaim = pointBalance[user];
 

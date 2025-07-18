@@ -35,11 +35,11 @@ const config: HardhatUserConfig = {
     //   accounts: [`0x${process.env.MAIN_PRIVATE_KEY}`],
     //   gasPrice: 200000000000
     // },
-    // amoy: {
-    //   chainId: 80002,
-    //   url: `${process.env.AMOY_RPC_URL}`,
-    //   accounts: [`0x${process.env.AMOY_PRIVATE_KEY}`]
-    // },
+    amoy: {
+      chainId: 80002,
+      url: `${process.env.AMOY_RPC_URL}`,
+      accounts: [`0x${process.env.AMOY_PRIVATE_KEY}`]
+    },
     // 'linea-sepolia': {
     //   chainId: 59141,
     //   url: `${process.env.LINEA_SEPOLIA_RPC_URL}`,
@@ -78,8 +78,8 @@ const config: HardhatUserConfig = {
         chainId: 80002,
         urls: {
           apiURL:
-            'https://www.oklink.com/api/v5/explorer/contract/verify-source-code-plugin/AMOY_TESTNET',
-          browserURL: 'https://www.oklink.com/amoy'
+            'https://api-amoy.polygonscan.com/api',
+          browserURL: 'https://amoy.polygonscan.com'
         }
       },
       {
