@@ -24,6 +24,12 @@ contract Loyalty is Ownable2StepUpgradeable, EmbeddedZKPVerifier {
     mapping(address => uint256) public addressToId;
     // On-chain record of points awarded to each user
     mapping(address => uint256) public pointBalance;
+    // Mapping to track if a user's proof has been validated for a specific request ID
+    mapping(address => mapping(uint64 => bool)) public proofsVerified;
+    // Mapping to track owner-allowed request IDs
+    mapping(uint64 => bool) public allowedRequestIds;
+    // Mapping to track if a user has a verified proof
+    mapping(address => bool) public hasVerifiedProof;
 
     // Conversion rate from points to the smallest unit of native token (e.g., wei)
     uint256 public pointsToTokenRate;
@@ -31,6 +37,7 @@ contract Loyalty is Ownable2StepUpgradeable, EmbeddedZKPVerifier {
     // --- Events ---
     event PointsCredited(address indexed user, uint256 amount);
     event TokensClaimed(address indexed user, uint256 pointsClaimed, uint256 amountSent);
+    event AllowedRequestIdSet(uint64 indexed requestId, bool allowed);
 
     /**
      * @dev Initializes the contract.
@@ -42,13 +49,20 @@ contract Loyalty is Ownable2StepUpgradeable, EmbeddedZKPVerifier {
     }
 
     /**
+     * @dev Sets an allowed request ID
+     */
+    function setAllowedRequestId(uint64 requestId, bool allowed) public onlyOwner {
+        allowedRequestIds[requestId] = allowed;
+        emit AllowedRequestIdSet(requestId, allowed);
+    }
+
+    /**
      * @dev Check if user submitted proof on-chain
      */
     modifier beforeClaim(address to) {
         require(
-            isProofVerified(to, SUBMIT_REQUEST_ID_SIG_VALIDATOR) ||
-            isProofVerified(to, SUBMIT_REQUEST_ID_MTP_VALIDATOR),
-            'only identities who provided sig or mtp proof on-chain are allowed to receive loyalty points'
+            hasVerifiedProof[to],
+            'only identities who provided a valid proof on-chain are allowed to receive loyalty points'
         );
         _;
     }
@@ -79,7 +93,7 @@ contract Loyalty is Ownable2StepUpgradeable, EmbeddedZKPVerifier {
         uint256[] memory inputs,
         ICircuitValidator /* validator */
     ) internal override {
-        if (requestId == SUBMIT_REQUEST_ID_SIG_VALIDATOR || requestId == SUBMIT_REQUEST_ID_MTP_VALIDATOR) {
+        if (requestId == SUBMIT_REQUEST_ID_SIG_VALIDATOR || requestId == SUBMIT_REQUEST_ID_MTP_VALIDATOR || allowedRequestIds[requestId]) {
             uint256 userId = inputs[1]; // As per standard Polygon ID circuit outputs
             address sender = _msgSender();
 
@@ -90,6 +104,8 @@ contract Loyalty is Ownable2StepUpgradeable, EmbeddedZKPVerifier {
                 // Mint points for the user
                 _creditPoints(sender, 1000000);
             }
+            proofsVerified[sender][requestId] = true;
+            hasVerifiedProof[sender] = true;
         }
     }
 
@@ -108,6 +124,27 @@ contract Loyalty is Ownable2StepUpgradeable, EmbeddedZKPVerifier {
 
         // Reset balance and send tokens
         pointBalance[user] = 0;
+        (bool success, ) = user.call{value: amountToSend}("");
+        require(success, "Native token transfer failed");
+
+        emit TokensClaimed(user, pointsToClaim, amountToSend);
+    }
+
+    /**
+     * @dev Allows a user who has proven their identity to claim a specific amount of tokens for their points.
+     */
+    function claimSpecificTokens(uint256 pointsToClaim) public beforeClaim(msg.sender) {
+        address user = _msgSender();
+
+        require(addressToId[user] != 0, "User identity not verified");
+        require(pointBalance[user] >= pointsToClaim, "Insufficient points balance");
+        require(pointsToClaim > 0, "No points to claim");
+
+        uint256 amountToSend = pointsToClaim * pointsToTokenRate;
+        require(address(this).balance >= amountToSend, "Insufficient contract balance");
+
+        // Decrease balance and send tokens
+        pointBalance[user] -= pointsToClaim;
         (bool success, ) = user.call{value: amountToSend}("");
         require(success, "Native token transfer failed");
 
@@ -139,5 +176,14 @@ contract Loyalty is Ownable2StepUpgradeable, EmbeddedZKPVerifier {
     function _creditPoints(address user, uint256 pointsToAward) internal {
         pointBalance[user] += pointsToAward;
         emit PointsCredited(user, pointsToAward);
+    }
+
+    /**
+     * @dev Allows the owner to withdraw funds from the contract.
+     */
+    function withdraw(uint256 amount) public onlyOwner {
+        require(address(this).balance >= amount, "Insufficient contract balance");
+        (bool success, ) = _msgSender().call{value: amount}("");
+        require(success, "Native token transfer failed");
     }
 }
